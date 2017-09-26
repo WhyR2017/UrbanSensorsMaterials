@@ -10,3 +10,4 @@ na pojazd. W lewym panelu dostepne sa przykladowe filtry (wybór pojazdów okres
 wsród linii przejezdzajacych w okolicy PW.
 
 Wizualizacja dostepna pod linkiem: 
+https://rawgit.com/flaminka/UrbanSensorsMaterials/master/Results/Baranowska/tramwajem_na_pw_ajax.html
