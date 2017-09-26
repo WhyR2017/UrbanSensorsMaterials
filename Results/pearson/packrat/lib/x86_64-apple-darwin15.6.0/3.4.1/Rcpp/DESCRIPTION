@@ -1,0 +1,37 @@
+Package: Rcpp
+Title: Seamless R and C++ Integration
+Version: 0.12.9.2
+Date: 2017-01-31
+Author: Dirk Eddelbuettel, Romain Francois, JJ Allaire, Kevin Ushey,
+    Qiang Kou, Nathan Russell, Douglas Bates and John Chambers
+Maintainer: Dirk Eddelbuettel <edd@debian.org>
+Description: The 'Rcpp' package provides R functions as well as C++
+    classes which offer a seamless integration of R and C++. Many R
+    data types and objects can be mapped back and forth to C++
+    equivalents which facilitates both writing of new code as well as
+    easier integration of third-party libraries. Documentation about
+    'Rcpp' is provided by several vignettes included in this package,
+    via the 'Rcpp Gallery' site at <http://gallery.rcpp.org>, the paper
+    by Eddelbuettel and Francois (2011, JSS), and the book by
+    Eddelbuettel (2013, Springer); see 'citation("Rcpp")' for details
+    on these last two.
+Depends: R (>= 3.0.0)
+Imports: methods, utils
+Suggests: RUnit, inline, rbenchmark, highlight, pkgKitten (>= 0.1.2)
+VignetteBuilder: highlight
+URL: http://www.rcpp.org, http://dirk.eddelbuettel.com/code/rcpp.html,
+    https://github.com/RcppCore/Rcpp
+License: GPL (>= 2)
+BugReports: https://github.com/RcppCore/Rcpp/issues
+MailingList: Please send questions and comments regarding Rcpp to
+    rcpp-devel@lists.r-forge.r-project.org
+RoxygenNote: 5.0.1
+GithubRepo: Rcpp
+GithubUsername: RcppCore
+GithubRef: master
+GithubSHA1: d38a304dbc4a6c5d7e7cf4012c63ffe3a364090b
+Built: R 3.4.1; x86_64-apple-darwin15.6.0; 2017-09-26 16:38:51 UTC;
+    unix
+InstallAgent: packrat 0.4.8.1
+InstallSource: github
+Hash: 30a123e68a58a5bc2fa7ffd1f9997da6

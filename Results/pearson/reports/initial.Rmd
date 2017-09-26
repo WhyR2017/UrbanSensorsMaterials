@@ -1,0 +1,53 @@
+---
+title: "Put report title here"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float:
+        collapsed: false
+    includes:
+      before_body: www/include_header.html
+    css: www/style_markdown.css
+    
+---
+```{r include = FALSE, cache = FALSE}
+# Load libraries
+library(ggplot2)
+library(ENRanalytics)
+options(shiny.sanitize.errors = TRUE)
+```
+
+<div class = "summary">
+
+##### Summary of the findings
+
+Put summary here. Use bullet points.
+
+* Finding 1
+* Finding 2
+* Finding 3
+</div>
+
+### Start section from third level heading
+
+Put some plots.
+
+```{r cache = FALSE, echo = F, warning = F, dpi = 144, fig.width = 13, fig.height = 8}
+ggplot(data = mtcars, aes(x = wt, y = mpg)) +
+        geom_point(size = 3, color = p_colors[1]) +
+        xlab("Weight") +
+        ylab("Miles per gallon") +
+        theme_enr(method = "color", fig_number = "000")
+```
+
+Put some text. Remember to __bold__ important things.
+
+And you're done! ;)
+
+</br></br>
+
+<a class = "back-button" href = "index.html">← Go back to index page</a>
+
+
+<!-- REMEMBER TO ALWAYS PUT GOOGLE ANALYTICS CODE AT THE END OF THE REPORT -->

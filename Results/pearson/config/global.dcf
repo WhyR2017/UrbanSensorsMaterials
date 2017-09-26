@@ -1,0 +1,16 @@
+version: 0.8
+data_loading: TRUE
+cache_loading: TRUE
+recursive_loading: FALSE
+munging: TRUE
+logging: FALSE
+load_libraries: TRUE
+libraries: ENRanalytics, tidyverse, data.table, scales, extrafont, stringi, rmarkdown
+as_factors: FALSE
+data_tables: FALSE
+attach_internal_libraries: FALSE
+data_loading_header: TRUE
+data_ignore:
+logging_level: INFO
+cache_loaded_data: FALSE
+sticky_variables: NONE
