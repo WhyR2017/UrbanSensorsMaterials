@@ -1,0 +1,1037 @@
+﻿<!DOCTYPE html>
+<html lang="pl">
+
+
+
+<!--  I PART - HEADER - loading data and scripts -->
+
+<head>
+<meta charset="utf-8">
+
+	<title>
+	Tramwajem na PW
+	</title>
+
+		<!-- loading D3 library, internet connection needed -->
+		<script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+		
+		<!-- loading JQuery if needed-->
+		<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+		
+		<!-- loading favourite Google Font: Roboto -->
+		<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+		
+		
+		<!-- data with position of stops -->
+		<script src="./linesStopsData.js" charset="utf-8"></script>
+		
+
+</head>
+
+
+
+<!--  II PART - CSS STYLES - global styling of elements -->
+
+ <style type="text/css">
+
+  svg{
+	   margin-left: auto;
+       margin-right: auto;
+	   display: block;
+	}
+ 
+  table {
+       table-layout: fixed;
+       width:1000px;
+       height:600px;
+	   margin-left: auto;
+       margin-right: auto;
+	   display: block;
+   }
+   
+  th, td {
+       padding: 0px;
+       border: 1px solid #404040;
+       border-collapse: collapse;
+	   
+   }
+  
+  text{
+	font-family: 'Roboto';
+  }
+ 
+  .tooltip { 
+    position: fixed;  
+    height: auto;
+    width:  auto;       
+    padding: 5px;       
+    font: 10px sans-serif;  
+    text-align: left;      
+    background: white; 
+    border: 10px;     
+    box-shadow:  0px 0px 10px 3px rgba(0,0,0,0.57); 
+    pointer-events: none; /* so the tooltip will be 'invisible' for pointer */
+      
+  }
+  
+</style>
+
+
+
+<!--  III PART - BODY - main code, html elements and script with javascript -->
+
+<body>
+
+<!--  table holding the whole visualization -->
+<table>
+<!--  header of the table  svg "titlePanel" -->
+<tr class="header" height="50px";>
+<th colspan="2"bgcolor="#494949">
+
+<div >
+		<svg id="titlePanel" width="1000px" height="50px" style="background:#494949">
+	</svg>
+		</div>
+</th>
+</tr>
+
+<!-- first and only row -->
+<tr >
+<!-- first column svg "sidePanel" -->
+<td>
+
+	<div max-width: 700px;>
+		<svg id="sidePanel" width="300px" height="550px" style="background:#494949">
+		</svg>
+	</div>
+
+		
+</td>
+<!-- second column svg "mapPanel" -->
+<td bgcolor= "white">
+
+	<div>
+			<svg id="mapPanel" width="700px" height="550px" version="1.1"
+				xmlns="http://www.w3.org/2000/svg" xmlns:xlink= "http://www.w3.org/1999/xlink">
+				
+				<!-- map created using https://snazzymaps.com/ + https://mapstyle.withgoogle.com/,
+					 has the same size as svg -->
+				<image xlink:href="blackMap.jpg" x="0" y="0" width="700px" height="550px" /> <!-- w SVG we have <image> not <img> like in html -->
+				
+			</svg>
+	</div> 
+		
+</td>
+</tr>
+
+</table>
+
+	
+
+<script type="text/javascript">
+
+	var tick = 5000,
+	    tickAJAX = 5000;
+	/*
+	--------------------------------------------
+	TITLE PANEL                            start
+	--------------------------------------------
+	*/
+	
+	/* SIMPLE EXAMPLE 1 - SELECTION WITHOUT DATA */
+	
+	// ADDING TITLE
+	var title = d3.select("#titlePanel").append("text")
+		.text("AKTUALNY RUCH KOMUNIKACJI MIEJSKIEJ WOKÓŁ PW, stan na (odczekaj chwilę)")
+		.attr("x", 30)
+		.attr("y", 27.5)
+		.style("font-size", "16px")
+		.attr("fill", "white");
+		
+	/* EXAMPLE 1 - END*/
+	
+		
+	// ADDING LEGEND
+	var legend = d3.select("#titlePanel").selectAll("g")
+			.data(["tramwaj/bus stoi", "tramwaj/bus w ruchu"])
+			.enter()
+			.append("g")
+		
+		legend.append("circle")
+			.attr("r", "5px")
+			.attr("cx", function(d,i){ return 700 + 150*i;})
+			.attr("cy", 25)
+			.attr('stroke', function(d){
+			if(d == "tramwaj/bus stoi"){return "orange";}
+			else{ return "rgba(255,165,0,0.6)";} })
+			.attr('stroke-width', function(d){
+			if(d == "tramwaj/bus stoi"){return 1;}
+			else{ return 4;}}
+			)
+			
+	    legend.append("rect")
+			.attr("x", function(d,i){ return 720 + 150*i-5;})
+			.attr("y", 25-5)
+			.attr("width", 10)
+			.attr("height", 10)
+			.attr('stroke', function(d){
+			if(d == "tramwaj/bus stoi"){return "orange";}
+			else{ return "rgba(255,165,0,0.6)";} })
+			.attr('stroke-width', function(d){
+			if(d == "tramwaj/bus stoi"){return 1;}
+			else{ return 4;}}
+			)
+			
+		legend.append("text")
+			.attr("x", function(d,i){ return 740 + 150*i;})
+			.attr("y", 25+2.5)
+			.text(function(d){ return d;})
+			.style("font-size", "10px")
+			.attr("fill", "white")
+				
+
+	/*
+	--------------------------------------------
+	TITLE PANEL                              end
+	--------------------------------------------
+	*/	
+			
+
+	/*
+	--------------------------------------------
+	MAP SCALES                             start
+	--------------------------------------------
+	*/				
+				
+	// min and max longitude and latitude of map image, will be useful to filter data	
+	var rangeLat = [52.21438, 52.228956],
+		rangeLon = [20.996959, 21.02695];
+		
+		
+	// getting size of the map (svg with map)
+	var	mapWidth = parseFloat(d3.select("#mapPanel").attr("width")),
+		mapHeight = parseFloat(d3.select("#mapPanel").attr("height"));
+	
+	// scales, to scale latitude and longitude to pixel position on map
+	var scaleLon = d3.scaleLinear()
+		.domain(rangeLon)
+		.range([0,mapWidth])
+
+	var scaleLat = d3.scaleLinear()
+		.domain(rangeLat)
+		.range([mapHeight,0]) // be careful! svg starts in left TOP corner, not bottom, you have to reverse range for vertical position
+
+		
+	/*
+	--------------------------------------------
+	MAP SCALES                               end
+	--------------------------------------------
+	*/	
+	
+	/*
+	--------------------------------------------
+	CREATE MARKER FOR PW                   start
+	--------------------------------------------
+	*/	
+	
+	
+	var markerPW = d3.select("#mapPanel")
+					.append("circle")
+					.attr("cx", scaleLon(21.006932))
+					.attr("cy", function(){ return scaleLat(52.222184);} )
+					.attr("r", "5px")
+					.attr("fill", "orange");
+					
+	var textPW = d3.select("#mapPanel")
+					.append("text")
+					.attr("x", scaleLon(21.006932)+10) 
+					.attr("y", scaleLat(52.222184))
+					.attr("fill", "orange")
+					.text("Tu jesteś!")
+					.style("font-family","Roboto") /* property 'font-family' for SVG <text> is its SVG-attr but: 
+					                                  Note that all SVG presentation attributes can be used as CSS properties. */
+					.style("font-size", "10px");
+
+	/*
+	--------------------------------------------
+	CREATE MARKER FOR PW                     end
+	--------------------------------------------
+	*/	
+	
+	
+	/*
+	--------------------------------------------
+	CREATE TRAM MARKERS                    start
+	--------------------------------------------
+	*/
+
+	// function to update mapPanel, updating separately, 1. circles, 2.arrows (lines), 3. labels with delay 4. labels with line number
+	function updateMap(data) {
+	
+	// filter data to trams inside the map
+	var data = data.filter(function(d){ return (d.lon <= rangeLon[1] & d.lon >= rangeLon[0])  // proper longitude inside map
+					& (d.lat <= rangeLat[1] & d.lat >= rangeLat[0]);});
+	
+	
+		// 1. ARROWS
+		
+		// scheme UPDATE-ENTER-EXIT !!!
+		
+		
+		// step JOIN, join new data with old data
+		var tramArrows = d3.select("#mapPanel").selectAll("line.tramGroup")
+						   .data(data, function(d) { return d.brigade + d.line; })
+						   			   
+			
+		// step: UPDATE	 - update properties of elements that was previous in chart	
+		tramArrows
+			.transition()
+			.duration(tick)
+			.attr("transform", function(d){ return "translate("+scaleLon(d.lon)+","+scaleLat(d.lat)+") rotate(" +-countAngleDegree(d.lon, d.lat, d.nextStopLon,d.nextStopLat)+")";})
+				
+		// step: ENTER - enter new elements to chart and add them properties		
+		tramArrows.enter().append("line")
+		.attr("class", function(d){ return "tram_" + d.line + " tramGroup";})
+				.attr("x1", 0)
+                .attr("x2", 20)
+                .attr("y1", 0)
+                .attr("y2", 0)
+				.attr("fill",  "orange")
+                .style("stroke", "orange" )
+				.style("stroke-width", "2px")
+				.attr("transform", function(d){ return "translate("+scaleLon(d.lon)+","+scaleLat(d.lat)+
+														") rotate(" +-countAngleDegree(d.lon, d.lat, d.nextStopLon,d.nextStopLat)+")";})
+		//.merge(tramArrows)  // update data and enter data merged in one selection, after this we can operate on both stage elements
+		
+		// function to count angle between two points
+		function countAngleDegree(x1, y1, x2, y2){
+		
+			return Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+		}
+				
+		
+		// step: EXIT remove unnecessary elements
+		tramArrows.exit().remove();
+		
+		
+		
+		// 2.a CIRCLES
+		
+		var tramsData = data.filter( function(d){ return trams.includes(d.line); });
+		
+		
+		// step JOIN
+		var tramCircles = d3.select("#mapPanel").selectAll("circle.tramGroup")
+						   .data(tramsData, function(d) { return d.brigade + d.line; })
+						   
+					   
+			
+		// step: UPDATE		
+		tramCircles
+			.transition()
+			.duration(tick)
+			.attr("cx", function(d){ return scaleLon(d.lon);})
+			.attr("cy", function(d){ return scaleLat(d.lat);})
+			.attr('stroke',function(d){ //if tram is moving its circle stroke width and color is changed to more blurry
+				if(d.status == "STOPPED"){ 
+							return "orange";
+						}
+				else{ 
+							return "rgba(255,165,0,0.5)";
+						}
+				})
+			.attr("stroke-width",  function(d){
+				if(d.status == "STOPPED"){ return "1px";}
+				else{ return "4px";}
+				})
+		
+		// step: ENTER			
+		tramCircles.enter().append("circle")
+		.attr("class", function(d){ return "tram_" + d.line + " tramGroup";})
+			.attr("r", "10px")
+			.attr("cx", function(d){ return scaleLon(d.lon);})
+			.attr("cy", function(d){ return scaleLat(d.lat);})
+			.attr('stroke',function(d){ //if tram is moving its circle stroke width and color is changed to more blurry
+				if(d.status == "STOPPED"){ 
+							return "orange";
+						}
+				else{ 
+							return "rgba(255,165,0,0.5)";
+						}
+				})
+			.attr("stroke-width",  function(d){
+				if(d.status == "STOPPED"){ return "1px";}
+				else{ return "4px";}
+				})
+		//.merge(tramCircles)
+		
+	
+		
+		// step: EXIT
+		tramCircles.exit().dispatch("mouseout").remove(); // dispatch function triggers particular events manually (here I want to trigger mouseout so the tooltip will disapear)
+		
+		
+		// 2.b RECTANGLES
+		
+		var busData = data.filter( function(d){ return buses.includes(d.line); });
+		
+		
+		// step JOIN
+		var tramRects = d3.select("#mapPanel").selectAll("rect.tramGroup")
+						   .data(busData, function(d) { return d.brigade + d.line; })
+						   
+					   
+			
+		// step: UPDATE		
+		tramRects
+			.transition()
+			.duration(tick)
+			.attr("x", function(d){ return scaleLon(d.lon)-9;})
+			.attr("y", function(d){ return scaleLat(d.lat)-9;})
+			.attr('stroke',function(d){ //if tram is moving its circle stroke width and color is changed to more blurry
+				if(d.status == "STOPPED"){ 
+							return "orange";
+						}
+				else{ 
+							return "rgba(255,165,0,0.5)";
+						}
+				})
+			.attr("stroke-width",  function(d){
+				if(d.status == "STOPPED"){ return "1px";}
+				else{ return "4px";}
+				})
+		
+		// step: ENTER			
+		tramRects.enter().append("rect")
+		.attr("class", function(d){ return "tram_" + d.line + " tramGroup";})
+			.attr("x", function(d){ return scaleLon(d.lon)-9;})
+			.attr("y", function(d){ return scaleLat(d.lat)-9})
+			.attr("width", 18)
+			.attr("height",18)
+			.attr('stroke',function(d){ //if tram is moving its circle stroke width and color is changed to more blurry
+				if(d.status == "STOPPED"){ 
+							return "orange";
+						}
+				else{ 
+							return "rgba(255,165,0,0.5)";
+						}
+				})
+			.attr("stroke-width",  function(d){
+				if(d.status == "STOPPED"){ return "1px";}
+				else{ return "4px";}
+				})	
+		//.merge(tramRects)
+		
+	
+		
+		// step: EXIT
+		tramRects.exit().dispatch("mouseout").remove(); // dispatch function triggers particular events manually (here I want to trigger mouseout so the tooltip will disapear)
+		
+		
+		
+		// 3. LABELS WITH DELAY
+		
+		
+		
+		// step JOIN
+		var tramLabels = d3.select("#mapPanel").selectAll("text.tramGroup.tramDelay")
+						   .data(data, function(d) { return d.brigade + d.line; })
+						   			   
+		// step: UPDATE					   
+		tramLabels
+			.transition()
+			.duration(tick)
+			.attr("x", function(d){ return scaleLon(d.lon)-12;})
+			.attr("y", function(d){ return scaleLat(d.lat)+5;})
+			.attr('fill',function(d){
+				if( d.delay < 0){ return "green";}
+				else if(d.delay > 0){ return "red"}
+				else{ return  "none"} // jak opoznienie ==0 to nie pokazuj etykiety
+				})
+			.text(function(d){ return d.delay + " min"});
+			
+		// step: ENTER		
+		tramLabels.enter().append("text")
+		.attr("class", function(d){ return "tram_" + d.line + " tramGroup" + " tramDelay";})
+			.attr("x", function(d){ return scaleLon(d.lon)-12;})
+			.attr("y", function(d){ return scaleLat(d.lat)+5;})
+			.style("text-anchor", "end")
+			.style("font-size", "12px")
+			.attr('fill',function(d){
+				if( d.delay < 0){ return "green";}
+				else if(d.delay > 0){ return "red"}
+				else{ return  "none"} // jak opoznienie ==0 to nie pokazuj etykiety
+				})
+			.text(function(d){ return d.delay + " min"})
+			.style("pointer-events","none")
+		//.merge(tramLabels)
+		
+		
+		
+		// step: EXIT
+		tramLabels.exit().remove();
+		
+		
+		// 4. LABELS WITH LINE NUMBER
+		
+		
+		
+		// step JOIN
+		var tramLineNumber = d3.select("#mapPanel").selectAll("text.tramGroup.tramNumber")
+						   .data(data, function(d) { return d.brigade + d.line; })
+						   			   
+		// step: UPDATE					   
+		tramLineNumber
+			.transition()
+			.duration(tick)
+			.attr("x", function(d){ return scaleLon(d.lon);})
+			.attr("y", function(d){ return scaleLat(d.lat)+4;})
+			.text(function(d){ return d.line; })
+			.style("pointer-events", "none");
+			
+		// step: ENTER		
+		tramLineNumber.enter().append("text")
+		.attr("class", function(d){ return "tram_" + d.line + " tramGroup" +  " tramNumber";})
+			.attr("x", function(d){ return scaleLon(d.lon);})
+			.attr("y", function(d){ return scaleLat(d.lat)+4;})
+			.style("text-anchor", "middle")
+			.style("font-size", "10px")
+			.style("pointer-events", "none")
+		    .attr('fill',"white")
+			.text(function(d){ return d.line; })
+		//.merge(tramLineNumber)
+		
+		
+		
+		// step: EXIT
+		tramLineNumber.exit().remove();
+
+		
+	}	
+	
+	
+	/*
+	--------------------------------------------
+	CREATE TRAM MARKERS                      end
+	--------------------------------------------
+	*/
+	
+	
+	
+	/*
+	--------------------------------------------
+	CREATE TOOLTIP FOR TRAMS and BUS        start
+	--------------------------------------------
+	*/
+	
+	// container for tooltip for trams
+	var tooltipTrams = d3.select("div").append("div").attr("id", "tooltipTrams").attr("class", "tooltip").style("opacity",0);
+
+    // necessary!!! proper style fo tooltip, look on CSS style in the beginning of the chart
+				
+	// updating tooltips content			
+	function updateTooltipTrams(){
+	
+			var trams = d3.select("#mapPanel").selectAll("circle.tramGroup, rect.tramGroup");
+			
+			trams.on("mouseover", function(d){
+			
+				tooltipTrams.html( "<b> Linia:" + d.line +"</b> (brygada: "+ d.brigade + ") kierunek: " + d.courseDirection +"<br/> <br/>" + 
+				"<b>opóźnienie:</b> "+ d.delay + " min na: " + d.delayAtStop +"<br/>" +
+				 "<b>następny przystanek:</b> "+ d.nextStop + " planowo o "+ d.nextStopTimetableVisitTime.substring(11,19) + "<br/>"
+				 + "<b>predkość:<b/> "+ d.speed + " km/h")
+				  .style("left", (d3.event.pageX )+5 + "px")  //setting position of tooltip left, top corner to cursor event on trams circles 
+				  .style("top", (d3.event.pageY) + "px")
+				  .transition()
+				  .duration(300)
+				  .style("opacity",1);
+			
+			
+			});
+			
+			trams.on("mouseout", function(d){
+			
+			 tooltipTrams
+			  .transition()
+			  .duration(300)
+			  .style("opacity", 0);
+			
+			});	
+		
+	}
+	
+	/*
+	--------------------------------------------
+	CREATE TOOLTIP FOR TRAMS                 end
+	--------------------------------------------
+	*/
+	
+	
+	
+
+    /*
+	-------------------------------------------------------------
+	CREATE STOPS SIGNS, TOOLTIP AND BUTTON FOR THEM	        start
+	-------------------------------------------------------------
+	*/
+ 
+	/* SIMPLE EXAMPLE 2 - SELECTION WITH DATA */
+	
+	// adding images with stop sign
+	var tramStops = d3.select("#mapPanel").selectAll(".tramStop")
+				.data(linesStopsData)
+				.enter()
+				.append("image")
+				.attr("class", "tramStop")
+				.attr("xlink:href", "stop.jpg")
+				.attr("width",8)
+				.attr("height", 10)
+				.attr("x", function(d){ return scaleLon(d.lon)-4;}) // left upper corner of the image is positioned, so we manually center it, by adding half of width/image
+				.attr("y", function(d){ return scaleLat(d.lat)-5;})
+
+	/* EXAMPLE 2 - end */			
+				
+	// container for tooltip for tram stops
+	var tooltipTramStops = d3.select("div").append("div").attr("id", "tooltipTramStops").attr("class", "tooltip").style("opacity",0);	
+				
+	// mouse events on them			
+	tramStops.on("mouseover", function(d){
+	
+		tooltipTramStops.html( "<b>" + d.name +"</b>" + "<br/> linie: "+ d.lines + "<br/>" )
+		  .style("left", (d3.event.pageX )+5 + "px")  //ustalamy pozycje elementu tam gdzie zostanie akcja podjeta 
+		  .style("top", (d3.event.pageY) + "px")
+		  .transition()
+		  .duration(300)
+		  .style("opacity",1);
+	
+	
+	});
+	
+	tramStops.on("mouseout", function(d){
+	
+	 tooltipTramStops
+      .transition()
+      .duration(300)
+      .style("opacity", 0);
+	
+	});
+	
+				
+	// button on sidePanel to show/hide stops 
+	var buttonTramStops = d3.select("#sidePanel").append("text")
+				.attr("x", 30)
+				.attr("y", 100)
+				.text("Ukryj przystanki")
+				.attr("fill", "white")
+				.style("font-weight", "bold")
+				.style("font-size", "12px")
+				.style("cursor", "pointer") //change of cursor icon above this element,
+				
+	var	isClickedTramStops = false;
+	
+	// click event on button
+	buttonTramStops.on("click", function(){
+	
+		if(!isClickedTramStops){
+		
+			d3.select(this).transition().duration(100).text("Pokaż przystanki");
+			
+			tramStops
+			.style("pointer-events","none") // tooltips not active 
+			.transition().duration(100).attr("opacity",0);
+			
+			isClickedTramStops = !isClickedTramStops;
+			
+		} else{
+		
+			d3.select(this).transition().duration(100).text("Ukryj przystanki");
+			
+			tramStops
+			.style("pointer-events","auto") // tooltips active again
+			.transition().duration(100).attr("opacity",1);
+			
+			isClickedTramStops = !isClickedTramStops;
+		
+		}
+	
+	})
+	
+	/*
+	-------------------------------------------------------------
+	CREATE STOPS SIGNS, TOOLTIP AND BUTTON FOR THEM	          end
+	-------------------------------------------------------------
+	*/
+	
+	
+	/*
+	--------------------------------------------
+	CREATE FILTERS	                       start
+	--------------------------------------------
+	*/
+
+	// group for them
+	var filters = d3.select("#sidePanel").append("g")
+				.attr("id", "filters")
+				.attr("transform", "translate(30,150)");
+		
+		// header	for filters	
+		filters.append("text").text("Pokaż na mapie linie nr:").style("font-size", "12px").style("font-weight", "bold").attr("fill", "white")
+		
+		// filters buttons
+		var filtersName = filters.append("g")
+		.attr("id", "filterTram")
+		.selectAll("text")
+		.data(["wszystkie", "10","14", "15", "17", "33"])
+		.enter()
+		.append("text")
+		.style("font-size", "12px")
+		.style("cursor", "pointer")
+		.attr("class", function(d){ return "filterLine"+ d;})
+		.text(function(d){return d;})
+		.attr("fill", function(d){ 
+				if(d == "wszystkie"){ return "white";}
+				else{ return "black";}
+				}
+		)
+		.attr("y",30)
+		.attr("x", function(d,i){ return i*30 +((d == 'wszystkie') ? 0 : 70); });
+		
+		filtersName.on("click", function(d){
+		
+			d3.select(this).transition().attr("fill", "white");
+			d3.select("#filterTram").selectAll(":not(.filterLine"+d+")").transition().attr("fill", "black")
+			
+			if(d =="wszystkie"){
+				d3.selectAll(".tramGroup").attr("opacity", 1).style("pointer-events","auto") ;
+			}else{
+			
+			d3.selectAll(".tramGroup.tram_"+d).attr("opacity", 1).style("pointer-events","auto") ;
+			d3.selectAll(".tramGroup:not(.tram_"+d+")").attr("opacity", 0).style("pointer-events","none") ;
+			}
+		
+		})
+		
+		
+	/*
+	--------------------------------------------
+	CREATE FILTERS	                         end
+	--------------------------------------------
+	*/	
+		
+	
+	/*
+	--------------------------------------------
+	CREATE AND UPDATE LEADERS TABLE		   start
+	--------------------------------------------
+	*/
+	
+	// LEADERS OF DELAY IN WARSAW FOR 10,14,15,17,33 LINE
+	
+	// headers for them
+	var  leaders = d3.select("#sidePanel").append("g")
+				.attr("id", "leaders")
+				.attr("transform", "translate(30,280)");
+				
+		leaders.append("text").text("Największe opóźnienia powyższych linii").style("font-size", "12px").style("font-weight", "bold").attr("fill", "white")
+		leaders.append("text").text("w całej Warszawie:").style("font-size", "12px").style("font-weight", "bold").attr("fill", "white").attr("y",20)
+	
+	// line to separate filters from leaders
+	var  line = d3.select("#sidePanel").append("line")
+				.attr("x1", 30)
+                .attr("x2", 270)
+                .attr("y1", 230)
+                .attr("y2", 230)
+				.attr("fill", "orange")
+                .style("stroke", "orange");
+
+
+
+	// create group for leaders
+	var table = d3.select("#sidePanel").append("g")
+		.attr("transform", "translate(30,350)");
+		
+		
+	
+	// function to update leaders
+	function updateTable(data) {
+	
+		//filters only first 5 leaders
+		var data = data.filter(function(d){ return d.position <6;});
+	
+		// step: JOIN
+		var ranking = table.selectAll("text")
+						.data(data, function(d){return d.position;}); // join by position
+			
+			// step: UPDATE			
+			ranking
+			.transition()
+			.duration(3000)
+			.text(function(d){return d.position + ". " + " " + d.line + ", " + " "+ d.delay+ " min, "+ d.delayAtStop;});
+		
+			// step: ENTER
+			ranking
+			.enter()
+			.append("text")
+			.text(function(d){return d.position + ". " + " " + d.line + ", " + " "+ d.delay+ " min, "+ d.delayAtStop;})
+			.attr("y",function(d,i){return i*30;})
+			.attr("fill","white")
+			.style("font-size", "13px")
+			.merge(ranking)
+			
+			// step: EXIT
+			ranking.exit().remove();
+						
+	}
+	
+	
+	/*
+	--------------------------------------------
+	CREATE AND UPDATE LEADERS TABLE		     end
+	--------------------------------------------
+	*/
+
+	 
+	/*
+	--------------------------------------------
+	UPDATE WHOLE VISUALIZATION		       start
+	--------------------------------------------
+	*/
+	
+	// function to update the whole visualization
+	function updateChart(data){
+	
+		console.log("Updating data");
+		
+		// prepare data to visualization
+		var dataToMap = prepareData(data);
+		
+		// update of the map
+		updateMap(dataToMap.data);
+		updateTooltipTrams();
+	
+		// update of leaders in delays ranking
+		updateTable(dataToMap.data);
+		
+		// update title
+		title.text("AKTUALNY RUCH KOMUNIKACJI MIEJSKIEJ WOKÓŁ PW, stan na " + dataToMap.max_data)
+		
+		
+	}			
+	
+		/*
+	--------------------------------------------
+	ŚCIĄGANIE AJAXEM                       start
+	--------------------------------------------
+	*/
+
+	var trams = ["14", "18", "10", "35", "25", "4",  "15", "1",  "9",  "7",  "24", "22", "17", "33"],
+		buses = [ "159", "517", "128", "175", "158", "521", "127", "522", "N43", "501", "525","519", "131", "N38" ,"504", "N32", "N35", "N88","N85",
+ "507", "174", "109", "N36", "700", "N34", "151", "182", "187", "523", "143", "188", "411", "385", "502", "N37", "N81", "N31", "520",
+ "N25", "514", "118", "138", "107", "503", "180", "116", "166", "E-2", "222", "108" ,"167" ,"RL"  ,"R7" , "R8" , "R9" , "R3" ];
+
+	function ajaxCall() {
+		  
+	  $.ajax({
+		url: 'https://vavel.mini.pw.edu.pl/api/vehicles/v1/full/?line=14,18,10,35,25,4,15,1,9,7,24,22,17,33,159,517,128,175,158,521,127,522,N43,501,525,519,131,N38,504,N32,N35,N88,N85,507,174,109,N36,700,N34,151,182,187,523,143,188,411,385,502,N37,N81,N31,520,N25,514,118,138,107,503,180,116,166,E-2,222,108,167,RL,R7,R8,R9,R3',
+		//headers: { 'Authorization': 'Token 88f8b64d1b9326480683a438d5845100c219f862'},
+		beforeSend: function(xhr) {
+		  xhr.setRequestHeader("Authorization", "Token 88f8b64d1b9326480683a438d5845100c219f862")
+		},		   
+		type: "GET",
+		dataType: 'json',
+		crossDomain: true,
+		success: function(data) {
+		  console.log('Success!');
+
+		  setTimeout(function(){
+				
+					updateChart(data);
+					
+				}, 0);
+			  
+		  },
+		error: function(error) {
+			//alert("Error");
+			},
+		complete: function(xhr, status){
+		
+				setTimeout(function(){
+				
+					ajaxCall();
+					
+				}, tickAJAX);
+		}
+	  });
+	  };
+	  
+	 /* TODO rozważyć czy zamiast success nie wsadzić tego w complete jakby coś nie działało
+	 https://stackoverflow.com/questions/23283276/execute-function-after-ajax-call-is-complete
+	 */
+
+	/*
+	--------------------------------------------
+	ŚCIĄGANIE AJAXEM                         end
+	--------------------------------------------
+	*/
+	
+	//init ajax call
+	//ajaxCall();
+
+	
+	// initial AJAX
+    setTimeout(function(){
+	
+		ajaxCall();
+		
+	}, tickAJAX);
+
+	
+	/* TODO rozważyć czy najlepszą opcją jest setInterval() czy nie używać innej funkcji w razie zaburzeń*/
+	
+	/*
+	--------------------------------------------
+	UPDATE WHOLE VISUALIZATION		       end
+	--------------------------------------------
+	*/
+	
+	
+	
+	/*
+	--------------------------------------------
+	PREPARE DATA 		                   start
+	--------------------------------------------
+	*/
+	
+	// function to prepare data to visualization
+	function prepareData(data){
+	
+	    // function to clean names of tram stops (7089-Koszykowa)
+		function cleanTramStopName(d){
+		
+			d.nextStop = d.nextStop.split("-")[1];
+			d.previousStop = d.previousStop.split("-")[1];
+			d.delayAtStop = d.delayAtStop.split("-")[1];
+			d.nearestStop = d.nearestStop.split("-")[1];
+		
+		}
+	
+
+			// 1. filtration of data					   
+			data = data.filter( function(d) { 			
+			    return d.timetableStatut != "MISSING" & d.nextStopTimetableVisitTime != null;  
+			});		
+			
+			// getting the latest date from data to set proper title 			   
+			var dates = d3.map(data,function(d){  return d.time;}).keys();
+			var max_data = d3.max(dates, function(d) {return new Date(d);});
+			// create string to return, dealing with GMT translation of hour
+			var max_data_string = max_data.getUTCHours() + ":" + 
+								(max_data.getMinutes()<10?'0':'') + 
+								max_data.getMinutes() + " " + 
+								max_data.toLocaleDateString("pl");
+			
+			//2.filtration of data, taking data from max_data to max_data - 3 hours (removing data with date from past days or hours if they occur in the data)
+			data = data.filter( function(d) { 	
+			
+			    var d1 = new Date(d.time)
+				var limit = d3.max(dates, function(d) {return new Date(d);});
+				limit.setHours(limit.getHours() - 3);
+			    return  d1 > limit;
+			});		
+			
+			data.map(cleanTramStopName); //map works on data!, cleaning names of stops
+			data = data.sort( function(x,y){ return (x.delay >= y.delay) ? -1 : 1;}); // sort data according to amount of delay (from max to min)
+			data.map( function(d,i) {d.delay = Math.ceil(d.delay/60); // create new needed data
+								   d.position = i+1; // position to create leaders of delays ranking
+								   })
+	
+			return  {"data": data, "max_data": max_data_string};
+	
+	};			
+	
+	
+	/*
+	--------------------------------------------
+	PREPARE DATA 		                     end
+	--------------------------------------------
+	*/
+	
+	
+	
+	
+	/*
+	--------------------------------------------
+	CLOCK 		                           start
+	--------------------------------------------
+	*/
+	
+	// adding elements of clock
+	function initializeClock() {
+		
+		var now = new Date();
+		var nowTime = now.toLocaleTimeString("pl"),
+			nowDate = now.toLocaleDateString("pl");
+			
+
+		var clock = d3.select("#sidePanel").append("g")
+		.attr("transform", "translate(30,50)");
+		
+		
+		var clockTime = clock.append("text")
+		.attr("id", "clockTime")
+		.attr("x", 0)
+		.attr("y", 0)
+		.text(nowTime)
+		.style("font-size", "35px")
+		.style("fill", "white")
+		.style("stroke", "black")
+		
+		
+		var clockDate = clock.append("text")
+		.attr("id", "clockDate")
+		.attr("x", 150)
+		.attr("y", 0)
+		.text(nowDate)
+		.style("fill", "white")
+		.style("stroke", "black")
+		.style("stroke-width", "0.2px")
+	};
+		
+	// function to update clock
+	function updateClock() {
+		
+		
+		var now = new Date();
+		var nowTime = now.toLocaleTimeString("pl"),
+			nowDate = now.toLocaleDateString("pl");
+			
+		d3.select("#clockDate")
+		.transition()
+		.text(nowDate);
+		
+	    d3.select("#clockTime")
+		.transition()
+		.text(nowTime);
+		
+
+		
+	};
+	
+	initializeClock();
+	
+	// update time on clock by one second
+	setInterval(updateClock, 1000);
+	
+	/*
+	--------------------------------------------
+	CLOCK 		                             end
+	--------------------------------------------
+	*/
+		
+</script>
+
+
+</body>
+
+
+</html>
