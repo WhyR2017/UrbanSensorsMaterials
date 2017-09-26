@@ -2,7 +2,7 @@ library("rvest")
 library("jsonlite")
 
 linie <- "10,17,33"
-token2 <- "35dbb2ebd27b23cfbec359dbd560adf2d4a5b27b"
+token2 <- "35dbb2ebd27b23cf....."
 
 res <- GET(url = paste0("https://vavel.mini.pw.edu.pl/api/vehicles/v1/short/?line=", linie),
            add_headers(Authorization = paste("Token", token2)))
@@ -22,11 +22,11 @@ jsonlite::fromJSON(as.character(res))
 
 curl -i \
     -H 'Accept:application/json' \
-    -H 'Authorization:Token 35dbb2ebd27b23cfbec359dbd560adf2d4a5b27b' \
+    -H 'Authorization:Token 35dbb2ebd27b23cf.....' \
     "https://vavel.mini.pw.edu.pl/api/vehicles/v1/short/?line=10,17,33"
 
 curl -i \
     -H 'Accept:application/json' \
-    -H 'Authorization:Token 35dbb2ebd27b23cfbec359dbd560adf2d4a5b27b' \
+    -H 'Authorization:Token 35dbb2ebd27b23cf.....' \
     "https://vavel.mini.pw.edu.pl/api/vehicles/v1/full/?line=10,17,33"
 
