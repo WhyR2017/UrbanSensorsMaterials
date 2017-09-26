@@ -1,0 +1,20 @@
+# Online data for trams and buses
+
+curl -i \
+    -H 'Accept:application/json' \
+    -H 'Authorization:Token 6f8676cdb2aa136220ebf4c95d7ad................' \
+    "https://vavel.mini.pw.edu.pl/api/vehicles/v1/short/?line=10"
+
+
+# Offline data for trams and buses
+
+http://192.168.137.209/hackathon/
+
+https://www.dropbox.com/s/ncd1siav8rhd9ml/offline_1_09_2017.zip?dl=0
+https://www.dropbox.com/s/08c4bilie6wo1wh/one_day.rda?dl=0
+
+# Offline data from cellphones
+
+https://www.dropbox.com/s/hn30bokzh57hcir/measurements.csv.zip?dl=0
+https://www.dropbox.com/s/63tss6ky88mjtpt/measurements_old.csv.zip?dl=0
+
