@@ -1,6 +1,4 @@
 # UrbanSensorsMaterials
 
-Materials for UrbanSensors hackaton http://whyr.pl/hackathon/
-
-This file: http://bit.ly/2xwYhbS
+Materials of the Team "100". During the hackaton we were working on finding correlations between phone activities and delays of buses.
 
