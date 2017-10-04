@@ -21,6 +21,8 @@ In a hurry? Don't worry! **Will I make it** is your ultimate transit guide for W
 
 **Will I make it** has several killer features that distinguish it from your typical transit app. For example, it allows you to track your connection in real time, so that you can get a sense of how close or far your tram is. Moreover, it provides estimated travel times based on historical data for the current day and time of day.
 
+<img src="graphs/czyzdaze.png" align="center"/>
+
 ## About
 **Will I make it** is a Shiny app built by the Efficacy Analytics team from the Pearson Poznan office during the [Urban Sensors data science hackathon](http://whyr.pl/hackathon/) held on 26 Sep 2017 as part of the [Why R conference](http://whyr.pl).
 
