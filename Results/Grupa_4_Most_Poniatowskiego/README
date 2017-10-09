@@ -1,0 +1,6 @@
+W folderze "data" znajdują się skrócone wersje plików (tylko po to, by dało się na nich odpalić skrypty Pythonowe).
+
+Pełne pliki są zbyt duże, żeby je wysyłać.
+
+Co to jest rozszerzenie .ipynb?
+Jest to rozszerzenie notatnika Jupyter. By zainstalować, zainstaluj anacondę.
